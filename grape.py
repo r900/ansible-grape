@@ -56,14 +56,8 @@ EXAMPLES = '''
 # Grape module specific support methods.
 #
 
-import urllib
 from ansible.module_utils.pycompat24 import get_exception
 from ansible.module_utils.urls import fetch_url
-
-try:
-    import json
-except ImportError:
-    import simplejson as json
 
 # import module snippets
 from ansible.module_utils.basic import AnsibleModule
@@ -77,13 +71,18 @@ def send_msg(module, webhook_url, username, msg):
     params['text'] = msg
 
     url = webhook_url
-    data = urllib.urlencode(params)
+    data = module.jsonify(params),
 
     if module.check_mode:
         # In check mode, exit before actually sending the message
         module.exit_json(changed=False)
 
-    response, info = fetch_url(module, url, data=data)
+    response, info = fetch_url(module,
+                               url=url,
+                               data=data,
+                               headers={'Content-type': 'application/json'},
+                               method="POST")
+
     if info['status'] == 200:
         return response.read()
     else:
