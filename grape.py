@@ -23,7 +23,7 @@ DOCUMENTATION = '''
 ---
 module: grape
 version_added: "0.1"
-short_description: Send a message to  Grape
+short_description: Send a message to Grape
 description:
     - Send a message to a Grape room via custom webhook
 options:
