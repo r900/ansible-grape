@@ -1,9 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-#
-# This file is part of Ansible
-#
-# Ansible is free software: you can redistribute it and/or modify
+
+# Ron Widler <ron@einfach.org>
+# Inspired by the hipchat and mattermost modules
+
+# This module is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
@@ -15,6 +16,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Ansible.  If not, see <http://www.gnu.org/licenses/>.
+
 ANSIBLE_METADATA = {'metadata_version': '1.0',
                     'status': ['preview'],
                     'supported_by': 'community'}
@@ -25,7 +27,7 @@ module: grape
 version_added: "0.1"
 short_description: Send a message to Grape
 description:
-    - Send a message to a Grape room via custom webhook
+    - Send a message to a Grape room using a custom webhook
 options:
   webhook_url:
     description:
@@ -34,11 +36,19 @@ options:
   username:
     description:
       - Username to show up in the message
-    required: true
+    default: Ansible
   msg:
     description:
       - Message to send
     required: true
+  validate_certs:
+    description:
+      - If C(no), SSL certificates will not be validated. This should only be used
+        on personally controlled sites using self-signed certificates.
+    default: yes
+    choices:
+      - 'yes'
+      - 'no'
 
 
 requirements: [ ]
@@ -49,7 +59,13 @@ EXAMPLES = '''
 - grape:
     webhook_url: "https://chatgrape.com/services/hook/custom/1/c94de931ec494e695d3e347c68c9e2f3/
     username: "My bot"
-    msg: "Task finished"
+    msg: "Task A finished"
+
+- grape:
+    webhook_url: "https://grape-test.example.com"
+    msg: "Sending to instance with self-signed SSL certs"
+    validate_certs: no
+
 '''
 
 # ===========================================
@@ -91,8 +107,7 @@ def send_msg(module, webhook_url, username, msg):
     if info['status'] == 200:
         return response.read()
     else:
-        module.fail_json(msg="failed to send message, return status=%s" %
-                         str(info['status']))
+        module.fail_json(msg="Failed to send message, return status={}".format(info['status']))
 
 
 # ===========================================
@@ -104,8 +119,9 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             webhook_url=dict(required=True, type='str'),
-            username=dict(required=True, type='str'),
+            username=dict(default='Ansible', type='str'),
             msg=dict(required=True, type='str'),
+            validate_certs=dict(default='yes', type='bool'),
         ),
         supports_check_mode=True
     )
@@ -118,7 +134,7 @@ def main():
         send_msg(module, webhook_url, username, msg)
     except Exception:
         e = get_exception()
-        module.fail_json(msg="unable to send msg: %s" % e)
+        module.fail_json(msg="Unable to send message: %s" % e)
 
     changed = True
     module.exit_json(changed=changed, username=username, msg=msg)
