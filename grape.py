@@ -71,16 +71,21 @@ def send_msg(module, webhook_url, username, msg):
     params['text'] = msg
 
     url = webhook_url
-    data = module.jsonify(params),
+    data = module.jsonify(params)
+
+    headers = {'Content-type': 'application/json'}
 
     if module.check_mode:
         # In check mode, exit before actually sending the message
-        module.exit_json(changed=False)
+        module.exit_json(changed=False,
+                         webhook_url=webhook_url,
+                         username=username,
+                         msg=msg)
 
     response, info = fetch_url(module,
                                url=url,
                                data=data,
-                               headers={'Content-type': 'application/json'},
+                               headers=headers,
                                method="POST")
 
     if info['status'] == 200:
@@ -98,9 +103,9 @@ def main():
 
     module = AnsibleModule(
         argument_spec=dict(
-            webhook_url=dict(required=True),
-            username=dict(required=True),
-            msg=dict(required=True),
+            webhook_url=dict(required=True, type='str'),
+            username=dict(required=True, type='str'),
+            msg=dict(required=True, type='str'),
         ),
         supports_check_mode=True
     )
